@@ -29,6 +29,37 @@ jobs:
       - name: Apply IR patch
         run: python apply_ir_fix.py bruce-1.16.1
 
+      - name: Pin FastLED compatibility version
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path("bruce-1.16.1")
+          changed = 0
+
+          for file in root.rglob("*.ini"):
+              if ".pio" in file.parts:
+                  continue
+
+              original = file.read_text()
+              updated, count = re.subn(
+                  r"(?im)^([ \t]*)(?:fastled/FastLED|FastLED)[ \t]*(?:@[^\r\n]*)?$",
+                  r"\1fastled/FastLED @ 3.9.20",
+                  original
+              )
+
+              if count:
+                  file.write_text(updated)
+                  print(f"Pinned FastLED in {file}")
+                  changed += count
+
+          if changed == 0:
+              raise SystemExit("FastLED dependency not found")
+
+          print("FastLED pinned to 3.9.20")
+          PY
+
       - name: Compile firmware
         working-directory: bruce-1.16.1
         run: pio run --environment m5stack-sticks3
