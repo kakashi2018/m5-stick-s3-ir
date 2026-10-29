@@ -1,0 +1,46 @@
+name: Build Bruce M5StickS3 GPIO42 IR Pullup Fix 1.16.1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - name: Check out patch files
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: python -m pip install --upgrade platformio
+
+      - name: Download original Bruce 1.16.1
+        run: git clone --branch 1.16.1 --depth 1 https://github.com/BruceDevices/firmware.git bruce-1.16.1
+
+      - name: Restore IR receiver pull-up
+        run: python apply_ir_fix.py bruce-1.16.1
+
+      - name: Build M5StickS3 release
+        working-directory: bruce-1.16.1
+        run: pio run --environment m5stack-sticks3
+
+      - name: Verify merged image
+        run: |
+          test -s bruce-1.16.1/Bruce-m5stack-sticks3.bin
+          ls -lh bruce-1.16.1/Bruce-m5stack-sticks3.bin
+          sha256sum bruce-1.16.1/Bruce-m5stack-sticks3.bin
+
+      - name: Upload complete merged firmware for flash address 0x0
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bruce-M5StickS3-GPIO42-PULLUP-1.16.1
+          path: bruce-1.16.1/Bruce-m5stack-sticks3.bin
+          if-no-files-found: error
