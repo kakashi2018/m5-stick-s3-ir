@@ -1,4 +1,4 @@
-name: Build Bruce M5StickS3 IR + FastLED Fix 1.16.1
+name: Build Bruce M5StickS3 RMT IR + Power Fix V2
 
 on:
   workflow_dispatch:
@@ -13,40 +13,33 @@ jobs:
     steps:
       - name: Check out patch bundle
         uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
+      - name: Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Install PlatformIO
         run: python -m pip install --upgrade platformio
-
-      - name: Clone official Bruce 1.16.1
+      - name: Clone Bruce 1.16.1
         run: git clone --branch 1.16.1 --depth 1 https://github.com/BruceDevices/firmware.git bruce-1.16.1
-
-      - name: Apply GPIO42 and FastLED fixes
+      - name: Apply IR RMT and power patch
         run: python apply_ir_fix.py bruce-1.16.1
-
-      - name: Verify patches applied
+      - name: Verify patch
         run: |
-          grep -Fq 'setup_ir_pin(bruceConfigPins.irRx, INPUT_PULLUP);' bruce-1.16.1/src/modules/ir/ir_read.cpp
+          grep -Fq 'STICKS3_RMT_IR=1' bruce-1.16.1/boards/m5stack-sticks3/m5stack-sticks3.ini
+          grep -Fq 'gStickS3IrMenuActive' bruce-1.16.1/boards/m5stack-sticks3/interface.cpp
+          grep -Fq 'StickS3 RMT IR RX pin=' bruce-1.16.1/src/modules/ir/ir_read.cpp
           grep -Fq 'fastled/FastLED @ 3.10.3' bruce-1.16.1/platformio.ini
-          echo 'Both source-level patches verified.'
-
-      - name: Compile Bruce for M5StickS3
+          echo 'RMT, IR power and FastLED patches present'
+      - name: Compile complete firmware
         working-directory: bruce-1.16.1
         run: pio run -e m5stack-sticks3
-
-      - name: Verify complete merged image
+      - name: Verify merged firmware
         run: |
           test -s bruce-1.16.1/Bruce-m5stack-sticks3.bin
-          ls -lh bruce-1.16.1/Bruce-m5stack-sticks3.bin
           sha256sum bruce-1.16.1/Bruce-m5stack-sticks3.bin
-
-      - name: Upload full image (flash at 0x0)
+      - name: Upload full firmware image
         uses: actions/upload-artifact@v4
         with:
-          name: Bruce-M5StickS3-1.16.1-IR-PULLUP-FastLED-3.10.3
+          name: Bruce-M5StickS3-RMT-IR-Power-V2-UNTESTED
           path: bruce-1.16.1/Bruce-m5stack-sticks3.bin
           if-no-files-found: error
