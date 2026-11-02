@@ -1,4 +1,4 @@
-name: Build Bruce M5StickS3 RMT IR + Power Fix V2
+name: Build Bruce M5StickS3 IR Test TX Bridge V4
 
 on:
   workflow_dispatch:
@@ -28,6 +28,8 @@ jobs:
           grep -Fq 'STICKS3_RMT_IR=1' bruce-1.16.1/boards/m5stack-sticks3/m5stack-sticks3.ini
           grep -Fq 'gStickS3IrMenuActive' bruce-1.16.1/boards/m5stack-sticks3/interface.cpp
           grep -Fq 'StickS3 RMT IR RX pin=' bruce-1.16.1/src/modules/ir/ir_read.cpp
+          grep -Fq 'sticks3RmtSendNec(46, a, c' bruce-1.16.1/src/modules/ir/custom_ir.cpp
+          grep -Fq 'cfg.mem_block_symbols = 64' bruce-1.16.1/src/modules/ir/sticks3_rmt_ir.h
           grep -Fq 'fastled/FastLED @ 3.10.3' bruce-1.16.1/platformio.ini
           echo 'RMT, IR power and FastLED patches present'
       - name: Compile complete firmware
@@ -40,6 +42,6 @@ jobs:
       - name: Upload full firmware image
         uses: actions/upload-artifact@v4
         with:
-          name: Bruce-M5StickS3-RMT-IR-Power-V2-UNTESTED
+          name: Bruce-M5StickS3-IR-Test-TX-Bridge-V4-UNTESTED
           path: bruce-1.16.1/Bruce-m5stack-sticks3.bin
           if-no-files-found: error
